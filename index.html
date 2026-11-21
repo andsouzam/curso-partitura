@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ClaveViva — Curso Prático de Leitura de Partitura</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <div class="app-shell">
+    <!-- Top Header -->
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true">𝄞</div>
+        <div>
+          <h1>ClaveViva</h1>
+          <span class="brand-sub">Leitura de Partitura • 100% Prática</span>
+        </div>
+      </div>
+
+      <div class="topbar-stats">
+        <div class="stat-pill" title="Sequência de acertos">
+          <span class="stat-label">Sequência</span>
+          <strong id="stat-streak">0</strong>
+        </div>
+        <div class="stat-pill" title="Pontuação total (XP)">
+          <span class="stat-label">XP</span>
+          <strong id="stat-xp">0</strong>
+        </div>
+        <div class="stat-pill" id="midi-status-pill" title="Status do teclado MIDI">
+          <span class="midi-dot" id="midi-dot"></span>
+          <span id="midi-label">MIDI: Desconectado</span>
+        </div>
+        <button id="btn-mic" class="btn btn-mic" title="Detectar notas do seu piano físico pelo microfone">
+          <span class="mic-dot" id="mic-dot"></span>
+          <span id="mic-label">Microfone: Desligado</span>
+          <span class="mic-meter" aria-hidden="true"><span class="mic-meter-fill" id="mic-meter-fill"></span></span>
+        </button>
+        <button id="btn-roadmap" class="btn btn-ghost">Plano do Curso</button>
+      </div>
+    </header>
+
+    <!-- Main Layout -->
+    <div class="workspace">
+      <!-- Sidebar: Organized Module/Lesson Index + Exercises -->
+      <aside class="sidebar">
+        <div class="sidebar-block">
+          <div class="sidebar-section-title">Índice de Aulas</div>
+          <div class="lesson-index" id="lesson-index">
+            <!-- Populated by app.js -->
+          </div>
+        </div>
+
+        <div class="sidebar-divider"></div>
+
+        <div class="module-badge" id="current-module-badge">Módulo 1 • Aula 1.2</div>
+        <h2 class="lesson-title" id="lesson-title">Carregando...</h2>
+        <p class="lesson-goal" id="lesson-goal"></p>
+
+        <div class="sidebar-section-title">Exercícios da Aula</div>
+        <ul class="exercise-list" id="exercise-list"></ul>
+
+        <div class="practice-tip-box" id="practice-tip-box">
+          <strong>Dica de Leitura</strong>
+          <p id="exercise-tip"></p>
+        </div>
+      </aside>
+
+      <!-- Main Stage: Controls + Rhythm Guide + Sheet Music + Piano -->
+      <main class="stage">
+        <!-- Transport & Mode Bar -->
+        <section class="controls-bar">
+          <div class="control-group">
+            <span class="control-label">Modo</span>
+            <div class="segmented" role="group" aria-label="Modo de prática">
+              <button class="seg-btn active" id="mode-step" data-mode="step" title="A partitura espera você acertar cada nota">Passo a Passo</button>
+              <button class="seg-btn" id="mode-tempo" data-mode="tempo" title="Toque no ritmo do metrônomo">Tempo Real</button>
+            </div>
+          </div>
+
+          <div class="control-group">
+            <label class="control-label" for="bpm-slider">Andamento <strong id="bpm-value">70</strong> BPM</label>
+            <input type="range" id="bpm-slider" min="45" max="140" value="70" />
+          </div>
+
+          <div class="control-group">
+            <label class="toggle-label" title="Indica o nome de cada linha no canto esquerdo da pauta">
+              <input type="checkbox" id="toggle-line-guides" checked />
+              <span>Linhas Guia</span>
+            </label>
+            <label class="toggle-label" title="Mostrar nome das notas (desative para treinar leitura pura)">
+              <input type="checkbox" id="toggle-note-names" />
+              <span>Dicas (C, D, E)</span>
+            </label>
+            <label class="toggle-label" title="Ativar ou desativar o clique do metrônomo">
+              <input type="checkbox" id="toggle-metronome" checked />
+              <span>Metrônomo</span>
+            </label>
+          </div>
+
+          <div class="action-buttons">
+            <button id="btn-listen" class="btn btn-secondary">Ouvir Exemplo</button>
+            <button id="btn-start" class="btn btn-primary">Praticar</button>
+            <button id="btn-reset" class="btn btn-ghost" title="Reiniciar exercício">↺</button>
+          </div>
+        </section>
+
+        <!-- Compact Visual & Audio Rhythm Guide -->
+        <section class="rhythm-guide" id="rhythm-guide" aria-label="Guia Visual e Sonoro das Figuras">
+          <!-- Populated by app.js -->
+        </section>
+
+        <!-- Live Feedback Banner -->
+        <section class="feedback-bar">
+          <div class="feedback-message" id="feedback-message">
+            Clique em <strong>Praticar</strong> ou toque qualquer tecla para começar.
+          </div>
+          <div class="live-metrics">
+            <span>Progresso: <strong id="metric-progress">0/0</strong></span>
+            <span>Precisão: <strong id="metric-accuracy">100%</strong></span>
+            <span id="beat-indicator" class="beat-dots" aria-hidden="true">
+              <span class="beat-dot"></span>
+              <span class="beat-dot"></span>
+              <span class="beat-dot"></span>
+              <span class="beat-dot"></span>
+            </span>
+          </div>
+        </section>
+
+        <!-- Sheet Music Paper -->
+        <section class="sheet-container">
+          <div class="sheet-header">
+            <div>
+              <h3 id="exercise-title">Exercício</h3>
+              <span id="exercise-subtitle" class="sheet-subtitle"></span>
+            </div>
+            <div class="stars-display" id="exercise-stars">☆☆☆</div>
+          </div>
+
+          <!-- Visual Beat Counter (for count-in and bar pulse) -->
+          <div class="metronome-guide" id="metronome-guide" aria-label="Pulso do compasso">
+            <div class="metronome-beats" id="metronome-beats">
+              <div class="m-beat" data-beat="0">1</div>
+              <div class="m-beat" data-beat="1">2</div>
+              <div class="m-beat" data-beat="2">3</div>
+              <div class="m-beat" data-beat="3">4</div>
+            </div>
+          </div>
+
+          <div class="sheet-paper" id="sheet-paper">
+            <!-- SVG rendered here -->
+          </div>
+        </section>
+
+        <!-- Interactive Piano Keyboard -->
+        <section class="piano-section">
+          <div class="piano-header">
+            <span>Piano (Mouse, toque, teclado <strong>A S D F G H J K</strong>, Microfone ou MIDI)</span>
+            <span class="last-played">Última nota: <strong id="last-note-played">—</strong></span>
+          </div>
+          <div class="piano-wrapper" id="piano-wrapper">
+            <!-- Piano keys generated by piano-ui.js -->
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Roadmap Modal -->
+  <div class="modal-backdrop hidden" id="roadmap-modal">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div>
+          <h2>Plano Completo do Curso — ClaveViva</h2>
+          <p>Do zero até tocar uma peça clássica completa (Minueto em Sol Maior — Bach/Petzold) com as duas mãos.</p>
+        </div>
+        <button id="btn-close-roadmap" class="btn btn-ghost">✕</button>
+      </div>
+      <div class="roadmap-body" id="roadmap-body">
+        <!-- Populated by app.js -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Exercise Complete Modal -->
+  <div class="modal-backdrop hidden" id="result-modal">
+    <div class="modal-card result-card">
+      <div class="result-stars" id="result-stars">★★★</div>
+      <h2 id="result-title">Exercício Concluído</h2>
+      <p id="result-summary"></p>
+      <div class="result-stats-grid">
+        <div class="result-stat">
+          <span>Precisão</span>
+          <strong id="result-accuracy">100%</strong>
+        </div>
+        <div class="result-stat">
+          <span>XP Ganho</span>
+          <strong id="result-xp">+50</strong>
+        </div>
+      </div>
+      <div class="result-actions">
+        <button id="btn-retry-exercise" class="btn btn-secondary">Repetir</button>
+        <button id="btn-next-exercise" class="btn btn-primary">Próximo Exercício →</button>
+      </div>
+    </div>
+  </div>
+
+  <script defer src="js/audio-engine.js"></script>
+  <script defer src="js/mic-detector.js"></script>
+  <script defer src="js/notation-renderer.js"></script>
+  <script defer src="js/piano-ui.js"></script>
+  <script defer src="js/curriculum.js"></script>
+  <script defer src="js/practice-engine.js"></script>
+  <script defer src="js/app.js"></script>
+</body>
+</html>
