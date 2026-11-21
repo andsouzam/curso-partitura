@@ -246,29 +246,57 @@
       return lesson.exercises[currentExerciseIndex];
     }
 
+    function isLessonCompleted(lessonId) {
+      const lesson = global.ClaveCurriculum.LESSONS[lessonId];
+      if (!lesson) return false;
+      return lesson.exercises.every((ex) => (progress.stars[ex.id] || 0) >= 1);
+    }
+
+    function isLessonUnlocked(lessonId) {
+      if (lessonId === "1.1") return true;
+      const lesson = global.ClaveCurriculum.LESSONS[lessonId];
+      if (!lesson) return false;
+      // Preserve access if user already has stars in this lesson
+      if (lesson.exercises.some((ex) => (progress.stars[ex.id] || 0) > 0)) return true;
+      const order = global.ClaveCurriculum.LESSON_ORDER || [];
+      const idx = order.indexOf(lessonId);
+      if (idx <= 0) return true;
+      return isLessonCompleted(order[idx - 1]);
+    }
+
+    function getLatestUnlockedLessonId() {
+      const order = global.ClaveCurriculum.LESSON_ORDER || ["1.1"];
+      let latest = "1.1";
+      for (const id of order) {
+        if (isLessonUnlocked(id)) latest = id;
+      }
+      return latest;
+    }
+
     function renderLessonIndex() {
       lessonIndex.innerHTML = "";
       global.ClaveCurriculum.ROADMAP.forEach((mod) => {
-        const hasAnyAvailable = mod.lessons.some((l) => Boolean(global.ClaveCurriculum.LESSONS[l.id]));
-        if (!hasAnyAvailable) return;
-
         const modTitle = document.createElement("div");
         modTitle.className = "index-module-title";
         modTitle.textContent = `Módulo ${mod.moduleId}`;
         lessonIndex.appendChild(modTitle);
 
         mod.lessons.forEach((l) => {
-          const isAvailable = Boolean(global.ClaveCurriculum.LESSONS[l.id]);
+          const unlocked = isLessonUnlocked(l.id);
+          const completed = isLessonCompleted(l.id);
           const btn = document.createElement("button");
           btn.type = "button";
-          btn.className = `index-lesson-btn ${l.id === currentLessonId ? "active" : ""} ${!isAvailable ? "locked" : ""}`;
-          btn.innerHTML = `<span>${l.title.replace(/^Aula\s+/, "")}</span><span>${isAvailable ? "" : "🔒"}</span>`;
-          if (isAvailable) {
+          btn.className = `index-lesson-btn ${l.id === currentLessonId ? "active" : ""} ${!unlocked ? "locked" : ""}`;
+          const statusIcon = completed ? "✓" : unlocked ? "" : "🔒";
+          btn.innerHTML = `<span>${l.title.replace(/^Aula\s+/, "")}</span><span>${statusIcon}</span>`;
+          if (unlocked) {
             btn.addEventListener("click", () => {
               currentLessonId = l.id;
               currentExerciseIndex = 0;
               loadCurrentExercise();
             });
+          } else {
+            btn.title = "Conclua todos os exercícios da aula anterior para desbloquear";
           }
           lessonIndex.appendChild(btn);
         });
@@ -346,20 +374,23 @@
       global.ClaveCurriculum.ROADMAP.forEach((mod) => {
         const modEl = document.createElement("div");
         modEl.className = "roadmap-module";
-        const isAvail = mod.status === "available";
+        const modCompleted = mod.lessons.every((l) => isLessonCompleted(l.id));
+        const modStarted = mod.lessons.some((l) => isLessonUnlocked(l.id));
         modEl.innerHTML = `
           <div class="roadmap-module-header">
             <h3>${mod.title}</h3>
-            <span class="badge-status ${isAvail ? "available" : "upcoming"}">
-              ${isAvail ? "Em andamento" : "Próximas aulas"}
+            <span class="badge-status ${modCompleted || modStarted ? "available" : "upcoming"}">
+              ${modCompleted ? "Concluído" : modStarted ? "Desbloqueado" : "Bloqueado"}
             </span>
           </div>
           <div class="roadmap-lessons">
             ${mod.lessons
               .map((l) => {
-                const clickable = Boolean(global.ClaveCurriculum.LESSONS[l.id]);
-                return `<div class="roadmap-lesson-pill ${clickable ? "clickable" : ""}" data-lesson="${l.id}">
-                  <strong>${clickable ? "▶ " : "🔒 "}${l.title}</strong>
+                const unlocked = isLessonUnlocked(l.id);
+                const completed = isLessonCompleted(l.id);
+                const icon = completed ? "✓ " : unlocked ? "▶ " : "🔒 ";
+                return `<div class="roadmap-lesson-pill ${unlocked ? "clickable" : ""}" data-lesson="${l.id}">
+                  <strong>${icon}${l.title}</strong>
                 </div>`;
               })
               .join("")}
@@ -447,15 +478,23 @@
         currentExerciseIndex++;
         loadCurrentExercise();
       } else {
-        const nextNum = (parseFloat(currentLessonId) + 0.1).toFixed(1);
-        if (global.ClaveCurriculum.LESSONS[nextNum]) {
-          currentLessonId = nextNum;
+        const order = global.ClaveCurriculum.LESSON_ORDER || [];
+        const idx = order.indexOf(currentLessonId);
+        const nextId = idx >= 0 && idx + 1 < order.length ? order[idx + 1] : null;
+        if (nextId && isLessonUnlocked(nextId)) {
+          currentLessonId = nextId;
           currentExerciseIndex = 0;
           loadCurrentExercise();
+        } else if (!nextId) {
+          engine.reset();
+          feedbackMsg.innerHTML =
+            "🏆 <strong>Parabéns! Você concluiu todo o curso e tocou a peça completa!</strong>";
+          feedbackMsg.className = "feedback-message ok";
         } else {
           engine.reset();
-          feedbackMsg.innerHTML = `<strong>Aula ${currentLessonId} concluída!</strong> Me avise no chat para eu liberar a <strong>Aula ${nextNum}</strong>.`;
-          feedbackMsg.className = "feedback-message ok";
+          feedbackMsg.innerHTML =
+            `Conclua todos os exercícios da <strong>Aula ${currentLessonId}</strong> com pelo menos 1★ para desbloquear a <strong>Aula ${nextId}</strong>!`;
+          feedbackMsg.className = "feedback-message neutral";
         }
       }
     });
@@ -540,6 +579,7 @@
     });
 
     // Initial boot
+    currentLessonId = getLatestUnlockedLessonId();
     updateHeaderStats();
     renderRhythmGuide();
     loadCurrentExercise();

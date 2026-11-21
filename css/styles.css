@@ -193,6 +193,9 @@ body {
   display: flex;
   flex-direction: column;
   gap: 6px;
+  max-height: 210px;
+  overflow-y: auto;
+  padding-right: 4px;
 }
 
 .index-module-title {
@@ -724,7 +727,7 @@ body {
 
 .key-white {
   position: relative;
-  width: 54px;
+  width: 42px;
   height: 100%;
   background: #fafafa;
   border: 1px solid #a1a1aa;
@@ -736,7 +739,7 @@ body {
   align-items: center;
   padding-bottom: 8px;
   color: #3f3f46;
-  font-size: 0.75rem;
+  font-size: 0.68rem;
   font-weight: 600;
   transition: background 0.05s, transform 0.05s;
   z-index: 1;
@@ -762,7 +765,7 @@ body {
 .key-black {
   position: absolute;
   top: 0;
-  width: 34px;
+  width: 26px;
   height: 92px;
   background: linear-gradient(to bottom, #27272a 0%, #09090b 100%);
   border: 1px solid #000;

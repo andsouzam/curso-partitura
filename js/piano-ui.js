@@ -3,6 +3,18 @@
  */
 (function (global) {
   const KEY_DEFS = [
+    { midi: 48, note: "C3", label: "Dó3", black: false, kbd: "Z" },
+    { midi: 49, note: "C#3", label: "Dó#", black: true, kbd: "" },
+    { midi: 50, note: "D3", label: "Ré3", black: false, kbd: "X" },
+    { midi: 51, note: "D#3", label: "Ré#", black: true, kbd: "" },
+    { midi: 52, note: "E3", label: "Mi3", black: false, kbd: "C" },
+    { midi: 53, note: "F3", label: "Fá3", black: false, kbd: "V" },
+    { midi: 54, note: "F#3", label: "Fá#", black: true, kbd: "" },
+    { midi: 55, note: "G3", label: "Sol3", black: false, kbd: "B" },
+    { midi: 56, note: "G#3", label: "Sol#", black: true, kbd: "" },
+    { midi: 57, note: "A3", label: "Lá3", black: false, kbd: "N" },
+    { midi: 58, note: "A#3", label: "Lá#", black: true, kbd: "" },
+    { midi: 59, note: "B3", label: "Si3", black: false, kbd: "M" },
     { midi: 60, note: "C4", label: "Dó4", black: false, kbd: "A" },
     { midi: 61, note: "C#4", label: "Dó#", black: true, kbd: "W" },
     { midi: 62, note: "D4", label: "Ré4", black: false, kbd: "S" },
@@ -19,7 +31,10 @@
     { midi: 73, note: "C#5", label: "Dó#5", black: true, kbd: "O" },
     { midi: 74, note: "D5", label: "Ré5", black: false, kbd: "L" },
     { midi: 75, note: "D#5", label: "Ré#5", black: true, kbd: "P" },
-    { midi: 76, note: "E5", label: "Mi5", black: false, kbd: ";" }
+    { midi: 76, note: "E5", label: "Mi5", black: false, kbd: ";" },
+    { midi: 77, note: "F5", label: "Fá5", black: false, kbd: "" },
+    { midi: 78, note: "F#5", label: "Fá#5", black: true, kbd: "" },
+    { midi: 79, note: "G5", label: "Sol5", black: false, kbd: "" }
   ];
 
   class PianoUI {
@@ -42,7 +57,7 @@
       keysWrap.className = "piano-keys";
 
       let whiteIndex = 0;
-      const whiteWidth = 54;
+      const whiteWidth = 42;
 
       KEY_DEFS.forEach((k) => {
         const btn = document.createElement("button");
@@ -57,7 +72,7 @@
         } else {
           btn.className = "key-black";
           // Position black key between previous white key and next
-          const leftPx = whiteIndex * whiteWidth - 17;
+          const leftPx = whiteIndex * whiteWidth - 13;
           btn.style.left = `${leftPx}px`;
           btn.innerHTML = `<span>${k.kbd}</span>`;
         }

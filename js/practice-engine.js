@@ -3,7 +3,7 @@
  * Handles Step-by-Step, Real-Time Metronome Mode, and Demo Playback.
  */
 (function (global) {
-  const DUR_BEATS = { w: 4, "h.": 3, h: 2, q: 1, "8": 0.5 };
+  const DUR_BEATS = { w: 4, "h.": 3, h: 2, "q.": 1.5, q: 1, "8": 0.5 };
 
   class PracticeEngine {
     constructor({ notation, audio, piano, callbacks }) {
