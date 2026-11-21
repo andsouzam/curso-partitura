@@ -88,6 +88,18 @@
     const btnRetryExercise = document.getElementById("btn-retry-exercise");
     const btnNextExercise = document.getElementById("btn-next-exercise");
 
+    const btnAuth = document.getElementById("btn-auth");
+    const authModal = document.getElementById("auth-modal");
+    const btnCloseAuth = document.getElementById("btn-close-auth");
+    const authForm = document.getElementById("auth-form");
+    const authEmail = document.getElementById("auth-email");
+    const authPassword = document.getElementById("auth-password");
+    const authError = document.getElementById("auth-error");
+    const btnAuthSignup = document.getElementById("btn-auth-signup");
+    const authLoggedPanel = document.getElementById("auth-logged-panel");
+    const authUserEmail = document.getElementById("auth-user-email");
+    const btnAuthSignout = document.getElementById("btn-auth-signout");
+
     // Initialize engines
     const notation = new global.ClaveNotation(sheetPaper);
 
@@ -189,9 +201,23 @@
           const prevStars = progress.stars[exerciseId] || 0;
           if (stars > prevStars) progress.stars[exerciseId] = stars;
           progress.xp += xpEarned;
+          if (currentStreak > (progress.bestStreak || 0)) progress.bestStreak = currentStreak;
           saveProgress(progress);
           updateHeaderStats();
           renderSidebar();
+
+          if (global.ClaveCloud && global.ClaveCloud.user) {
+            global.ClaveCloud.saveCloudProgress(progress, currentLessonId).catch(() => {});
+            global.ClaveCloud.recordAttempt({
+              lessonId: currentLessonId,
+              exerciseId,
+              accuracy,
+              stars,
+              xpEarned,
+              mode: engine.mode,
+              bpm: engine.bpm
+            }).catch(() => {});
+          }
 
           resultStars.textContent = renderStarsText(stars);
           resultTitle.textContent = stars === 3 ? "Excelente Leitura!" : "Exercício Concluído!";
@@ -434,9 +460,94 @@
       }
     });
 
+    // Auth & Supabase Cloud Sync
+    function showAuthError(msg) {
+      authError.textContent = msg;
+      authError.classList.remove("hidden");
+    }
+
+    function clearAuthError() {
+      authError.classList.add("hidden");
+    }
+
+    async function handleCloudUser(user) {
+      if (user) {
+        btnAuth.textContent = user.email.split("@")[0];
+        authForm.classList.add("hidden");
+        authLoggedPanel.classList.remove("hidden");
+        authUserEmail.textContent = user.email;
+
+        try {
+          const cloud = await global.ClaveCloud.loadCloudProgress();
+          if (cloud) {
+            progress.xp = Math.max(progress.xp || 0, cloud.xp || 0);
+            progress.bestStreak = Math.max(progress.bestStreak || 0, cloud.best_streak || 0);
+            const mergedStars = { ...(cloud.stars || {}) };
+            for (const [k, v] of Object.entries(progress.stars || {})) {
+              mergedStars[k] = Math.max(mergedStars[k] || 0, v);
+            }
+            progress.stars = mergedStars;
+            saveProgress(progress);
+            updateHeaderStats();
+            renderSidebar();
+          }
+          await global.ClaveCloud.saveCloudProgress(progress, currentLessonId);
+        } catch (_) {}
+      } else {
+        btnAuth.textContent = "Entrar / Salvar";
+        authForm.classList.remove("hidden");
+        authLoggedPanel.classList.add("hidden");
+      }
+    }
+
+    btnAuth.addEventListener("click", () => {
+      clearAuthError();
+      authModal.classList.remove("hidden");
+    });
+    btnCloseAuth.addEventListener("click", () => authModal.classList.add("hidden"));
+    authModal.addEventListener("click", (e) => {
+      if (e.target === authModal) authModal.classList.add("hidden");
+    });
+
+    authForm.addEventListener("submit", async (e) => {
+      e.preventDefault();
+      clearAuthError();
+      try {
+        await global.ClaveCloud.signIn(authEmail.value.trim(), authPassword.value);
+        authModal.classList.add("hidden");
+      } catch (err) {
+        showAuthError(err.message || "Erro ao entrar.");
+      }
+    });
+
+    btnAuthSignup.addEventListener("click", async () => {
+      clearAuthError();
+      try {
+        const res = await global.ClaveCloud.signUp(authEmail.value.trim(), authPassword.value);
+        if (res && !res.session) {
+          showAuthError("Conta criada! Verifique seu e-mail para confirmar o cadastro.");
+        } else {
+          authModal.classList.add("hidden");
+        }
+      } catch (err) {
+        showAuthError(err.message || "Erro ao criar conta.");
+      }
+    });
+
+    btnAuthSignout.addEventListener("click", async () => {
+      await global.ClaveCloud.signOut();
+      authModal.classList.add("hidden");
+    });
+
     // Initial boot
     updateHeaderStats();
     renderRhythmGuide();
     loadCurrentExercise();
+
+    if (global.ClaveCloud) {
+      global.ClaveCloud.init((user) => {
+        handleCloudUser(user);
+      });
+    }
   });
 })(window);

@@ -37,6 +37,7 @@
           <span class="mic-meter" aria-hidden="true"><span class="mic-meter-fill" id="mic-meter-fill"></span></span>
         </button>
         <button id="btn-roadmap" class="btn btn-ghost">Plano do Curso</button>
+        <button id="btn-auth" class="btn btn-secondary">Entrar / Salvar</button>
       </div>
     </header>
 
@@ -205,6 +206,43 @@
     </div>
   </div>
 
+  <!-- Auth / Cloud Sync Modal -->
+  <div class="modal-backdrop hidden" id="auth-modal">
+    <div class="modal-card auth-card">
+      <div class="modal-header">
+        <div>
+          <h2>Conta e Progresso na Nuvem</h2>
+          <p>Entre ou crie uma conta para salvar suas aulas, estrelas e XP em qualquer dispositivo.</p>
+        </div>
+        <button id="btn-close-auth" class="btn btn-ghost">✕</button>
+      </div>
+
+      <form id="auth-form" class="auth-form">
+        <label class="auth-field">
+          <span>E-mail</span>
+          <input type="email" id="auth-email" required placeholder="seu@email.com" />
+        </label>
+        <label class="auth-field">
+          <span>Senha</span>
+          <input type="password" id="auth-password" required minlength="6" placeholder="Mínimo 6 caracteres" />
+        </label>
+        <div class="auth-error hidden" id="auth-error"></div>
+        <div class="auth-actions">
+          <button type="submit" id="btn-auth-signin" class="btn btn-primary">Entrar</button>
+          <button type="button" id="btn-auth-signup" class="btn btn-secondary">Criar Conta</button>
+        </div>
+      </form>
+
+      <div id="auth-logged-panel" class="auth-logged-panel hidden">
+        <p>Conectado como: <strong id="auth-user-email"></strong></p>
+        <p class="auth-sync-note">Seu progresso é sincronizado automaticamente a cada exercício concluído.</p>
+        <button id="btn-auth-signout" class="btn btn-ghost">Sair da Conta</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script defer src="js/supabase-client.js"></script>
   <script defer src="js/audio-engine.js"></script>
   <script defer src="js/mic-detector.js"></script>
   <script defer src="js/notation-renderer.js"></script>
